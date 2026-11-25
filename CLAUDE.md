@@ -18,6 +18,7 @@ web/                   # React + TypeScript + Vite
 tests/
   Pid.Domain.Tests/
   Pid.Application.Tests/
+  Pid.Api.Tests/       # testy integracyjne: WebApplicationFactory + klient SignalR
 ```
 
 Kierunek zależności: `Api -> Infrastructure -> Application -> Domain`. Domain nie zna żadnej innej warstwy.
@@ -61,10 +62,18 @@ Własne proste interfejsy zamiast MediatR (lepiej do nauki i bez problemów lice
 
 ## Infrastructure i Api
 
-- Na start repozytorium in-memory (`ISimulationRepository`); baza danych dopiero, gdy będzie potrzebna.
-- `SimulationRunner : BackgroundService` co stały interwał wywołuje `Tick` i publikuje stan przez SignalR.
-- Endpointy są cienkie: mapują żądanie na komendę lub zapytanie i wywołują handler, bez logiki biznesowej.
-  REST dla komend i zapytań, SignalR (`/hubs/simulation`) do strumienia stanu na żywo.
+- Na start repozytorium in-memory (`InMemorySimulationRepository`, singleton); baza danych dopiero, gdy będzie potrzebna.
+- Współbieżność: wszystkie handlery są owinięte w `ExecutionGate` (jeden handler naraz), bo API i runner
+  zmieniają te same obiekty w pamięci. Pilnuje tego test `Parallel_commands_and_queries_do_not_corrupt_the_simulation`.
+- `SimulationRunner : BackgroundService` (folder `Runner/`): co `TickInterval` (250 ms) wysyła `AdvanceSimulation`
+  o `SimulatedTimePerTick` (2 min) dla każdej symulacji i publikuje stan przez `ISimulationStatePublisher`.
+  Ustawienia w sekcji `SimulationRunner` w `appsettings.json`.
+- Endpointy (`Endpoints/SimulationEndpoints.cs`) są cienkie: mapują żądanie na komendę lub zapytanie i wywołują handler.
+  `POST /api/simulations`, `GET /api/simulations[/{id}[/history]]`, `PUT /{id}/setpoint|ambient|pid`, `POST /{id}/advance`.
+  Przykłady żądań w `src/Pid.Api/Pid.Api.http`.
+- Błędy zamienia na problem details `ApiExceptionHandler`: walidacja i `DomainException` dają 400, `NotFoundException` 404.
+- SignalR: hub `/hubs/simulation`; klient wywołuje `Subscribe(simulationId)` i dostaje `StateUpdated(SimulationStateDto)`.
+- API działa na `http://localhost:5080`. Frontend w trybie dev łączy się przez proxy Vite, więc CORS nie jest potrzebny.
 
 ## Frontend (web/)
 

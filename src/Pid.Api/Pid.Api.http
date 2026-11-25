@@ -1,0 +1,56 @@
+# Run the API (dotnet run --project src/Pid.Api), then click "Send Request" above each request
+# (VS Code extension "REST Client", or built into Visual Studio / Rider).
+
+@baseUrl = http://localhost:5080
+
+### Create a simulation (copy the returned id into @id below)
+POST {{baseUrl}}/api/simulations
+Content-Type: application/json
+
+{
+  "house": { "heatCapacityJPerK": 20000000, "thermalResistanceKPerW": 0.005 },
+  "initialTemperatureC": 15,
+  "heaterMaxPowerW": 10000,
+  "pid": { "kp": 0.5, "ki": 0.000139, "kd": 0 },
+  "setpointC": 21,
+  "ambientC": 0
+}
+
+###
+@id = 00000000-0000-0000-0000-000000000000
+
+### Current state
+GET {{baseUrl}}/api/simulations/{{id}}
+
+### Last 20 samples
+GET {{baseUrl}}/api/simulations/{{id}}/history?maxSamples=20
+
+### Change setpoint
+PUT {{baseUrl}}/api/simulations/{{id}}/setpoint
+Content-Type: application/json
+
+{ "setpointC": 18 }
+
+### Frost outside
+PUT {{baseUrl}}/api/simulations/{{id}}/ambient
+Content-Type: application/json
+
+{ "ambientC": -15 }
+
+### Retune PID
+PUT {{baseUrl}}/api/simulations/{{id}}/pid
+Content-Type: application/json
+
+{ "kp": 1.0, "ki": 0.0003, "kd": 0 }
+
+### Fast forward one hour
+POST {{baseUrl}}/api/simulations/{{id}}/advance
+Content-Type: application/json
+
+{ "duration": "01:00:00" }
+
+### Invalid setpoint -> 400 with validation errors
+PUT {{baseUrl}}/api/simulations/{{id}}/setpoint
+Content-Type: application/json
+
+{ "setpointC": 500 }

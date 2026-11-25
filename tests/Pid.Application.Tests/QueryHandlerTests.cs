@@ -3,6 +3,7 @@ using Pid.Application.Simulations.Commands.AdvanceSimulation;
 using Pid.Application.Simulations.Commands.CreateSimulation;
 using Pid.Application.Simulations.Queries.GetSimulationHistory;
 using Pid.Application.Simulations.Queries.GetSimulationState;
+using Pid.Application.Simulations.Queries.ListSimulations;
 
 namespace Pid.Application.Tests;
 
@@ -33,6 +34,18 @@ public class QueryHandlerTests
             .HandleAsync(new GetSimulationHistoryQuery(_id, MaxSamples: 3));
 
         Assert.Equal([80, 90, 100], history.Select(s => s.TimeSeconds));
+    }
+
+    [Fact]
+    public async Task List_returns_ids_of_created_simulations()
+    {
+        var otherId = Guid.NewGuid();
+        await new CreateSimulationHandler(_repository).HandleAsync(TestData.CreateCommand(_id));
+        await new CreateSimulationHandler(_repository).HandleAsync(TestData.CreateCommand(otherId));
+
+        var ids = await new ListSimulationsHandler(_repository).HandleAsync(new ListSimulationsQuery());
+
+        Assert.Equivalent(new[] { _id, otherId }, ids);
     }
 
     [Fact]

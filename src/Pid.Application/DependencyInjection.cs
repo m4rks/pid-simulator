@@ -10,6 +10,7 @@ using Pid.Application.Simulations.Commands.UpdatePidParameters;
 using Pid.Application.Simulations.Dtos;
 using Pid.Application.Simulations.Queries.GetSimulationHistory;
 using Pid.Application.Simulations.Queries.GetSimulationState;
+using Pid.Application.Simulations.Queries.ListSimulations;
 
 namespace Pid.Application;
 
@@ -19,6 +20,7 @@ public static class DependencyInjection
     public static IServiceCollection AddApplication(this IServiceCollection services)
     {
         services.AddValidatorsFromAssembly(typeof(DependencyInjection).Assembly);
+        services.AddSingleton<ExecutionGate>();
 
         services.AddCommandHandler<CreateSimulationCommand, CreateSimulationHandler>();
         services.AddCommandHandler<SetSetpointCommand, SetSetpointHandler>();
@@ -26,22 +28,36 @@ public static class DependencyInjection
         services.AddCommandHandler<UpdatePidParametersCommand, UpdatePidParametersHandler>();
         services.AddCommandHandler<AdvanceSimulationCommand, AdvanceSimulationHandler>();
 
-        services.AddScoped<IQueryHandler<GetSimulationStateQuery, SimulationStateDto>, GetSimulationStateHandler>();
-        services.AddScoped<
-            IQueryHandler<GetSimulationHistoryQuery, IReadOnlyList<SimulationSampleDto>>,
-            GetSimulationHistoryHandler>();
+        services.AddQueryHandler<GetSimulationStateQuery, SimulationStateDto, GetSimulationStateHandler>();
+        services.AddQueryHandler<GetSimulationHistoryQuery, IReadOnlyList<SimulationSampleDto>, GetSimulationHistoryHandler>();
+        services.AddQueryHandler<ListSimulationsQuery, IReadOnlyList<Guid>, ListSimulationsHandler>();
 
         return services;
     }
 
-    /// <summary>Whoever asks for ICommandHandler&lt;TCommand&gt; gets the real handler wrapped in validation.</summary>
+    /// <summary>
+    /// Whoever asks for ICommandHandler&lt;TCommand&gt; gets: validation -> one-at-a-time gate -> real handler.
+    /// Validation runs outside the gate, so invalid commands never wait for it.
+    /// </summary>
     private static void AddCommandHandler<TCommand, THandler>(this IServiceCollection services)
         where TCommand : ICommand
         where THandler : class, ICommandHandler<TCommand>
     {
         services.AddScoped<THandler>();
         services.AddScoped<ICommandHandler<TCommand>>(provider => new ValidatingCommandHandler<TCommand>(
-            provider.GetRequiredService<THandler>(),
+            new SerializedCommandHandler<TCommand>(
+                provider.GetRequiredService<THandler>(),
+                provider.GetRequiredService<ExecutionGate>()),
             provider.GetServices<IValidator<TCommand>>()));
+    }
+
+    private static void AddQueryHandler<TQuery, TResult, THandler>(this IServiceCollection services)
+        where TQuery : IQuery<TResult>
+        where THandler : class, IQueryHandler<TQuery, TResult>
+    {
+        services.AddScoped<THandler>();
+        services.AddScoped<IQueryHandler<TQuery, TResult>>(provider => new SerializedQueryHandler<TQuery, TResult>(
+            provider.GetRequiredService<THandler>(),
+            provider.GetRequiredService<ExecutionGate>()));
     }
 }

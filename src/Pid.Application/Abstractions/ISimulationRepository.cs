@@ -6,6 +6,7 @@ namespace Pid.Application.Abstractions;
 public interface ISimulationRepository
 {
     Task<Simulation?> GetAsync(Guid id, CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<Guid>> ListIdsAsync(CancellationToken cancellationToken = default);
     Task AddAsync(Simulation simulation, CancellationToken cancellationToken = default);
     Task UpdateAsync(Simulation simulation, CancellationToken cancellationToken = default);
 }
