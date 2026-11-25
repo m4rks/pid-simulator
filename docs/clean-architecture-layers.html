@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Warstwy Clean Architecture</title>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --color-paper:   #f5f5f5;
+      --color-ink:     #2d3142;
+      --color-muted:   #4f5d75;
+      --color-accent:  #bf4520;
+      --font-sans:     'Geist', system-ui, sans-serif;
+      --font-serif:    'Instrument Serif', serif;
+      --font-mono:     'Geist Mono', ui-monospace, monospace;
+    }
+
+    body {
+      font-family: var(--font-sans);
+      background: var(--color-paper);
+      color: var(--color-ink);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 3rem 2rem;
+    }
+
+    .frame { max-width: 1200px; width: 100%; min-width: 0; }
+
+    .eyebrow {
+      font-family: var(--font-mono);
+      font-size: 0.66rem;
+      font-weight: 500;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--color-muted);
+      margin-bottom: 0.5rem;
+    }
+
+    h1 {
+      font-family: var(--font-serif);
+      font-size: clamp(1.5rem, 2.4vw + 0.75rem, 2rem);
+      font-weight: 400;
+      letter-spacing: -0.02em;
+      line-height: 1.15;
+      color: var(--color-ink);
+      margin-bottom: 1.5rem;
+    }
+
+    .diagram-container { width: 100%; overflow-x: auto; }
+    svg { width: 100%; min-width: 1000px; display: block; }
+
+    @media print {
+      .diagram-container { overflow-x: visible; }
+      svg { min-width: 0; }
+    }
+  </style>
+</head>
+<body>
+  <div class="frame">
+    <p class="eyebrow">PID Simulator · Clean Architecture</p>
+    <h1>Zależności wskazują tylko do środka</h1>
+
+    <div class="diagram-container">
+    <svg viewBox="0 0 1000 456" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="clean-architecture-layers-title clean-architecture-layers-desc">
+      <title id="clean-architecture-layers-title">Warstwy Clean Architecture w PID Simulator</title>
+      <desc id="clean-architecture-layers-desc">Cztery warstwy backendu, Pid.Api, Pid.Infrastructure, Pid.Application i Pid.Domain, w których każda zależy tylko od warstw niższych, a Pid.Domain, jedyna już zbudowana, nie zależy od niczego.</desc>
+
+      <rect width="100%" height="100%" fill="#f5f5f5"/>
+
+      <!-- Direction column (left margin) -->
+      <text x="40" y="68" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" letter-spacing="0.18em">ZALEŻNOŚCI</text>
+      <line x1="80" y1="80" x2="80" y2="360" stroke="rgba(45,49,66,0.30)" stroke-width="1"/>
+      <polygon points="76,360 84,360 80,368" fill="#4f5d75"/>
+      <text x="40" y="384" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" letter-spacing="0.18em">RDZEŃ</text>
+
+      <!-- Stack container hairlines -->
+      <line x1="120" y1="80" x2="960" y2="80" stroke="rgba(45,49,66,0.12)" stroke-width="1"/>
+
+      <!-- L4 — Pid.Api -->
+      <rect x="120" y="80" width="840" height="72" fill="#ffffff"/>
+      <line x1="120" y1="152" x2="960" y2="152" stroke="rgba(45,49,66,0.12)" stroke-width="1"/>
+      <text x="140" y="120" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" letter-spacing="0.14em">L4</text>
+      <text x="200" y="112" fill="#2d3142" font-size="16" font-weight="600" font-family="'Geist', sans-serif">Pid.Api</text>
+      <text x="200" y="130" fill="#5a6580" font-size="10" font-family="'Geist', sans-serif">cienkie endpointy, SignalR hub, DI</text>
+      <rect x="492" y="108" width="68" height="14" rx="2" fill="transparent" stroke="rgba(45,49,66,0.30)" stroke-width="0.8" stroke-dasharray="3,2"/>
+      <text x="526" y="118" fill="#5a6580" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">PLANOWANE</text>
+      <text x="940" y="120" fill="#4f5d75" font-size="10" font-family="'Geist Mono', monospace" text-anchor="end" letter-spacing="0.04em">Program.cs · /hubs/simulation</text>
+
+      <!-- L3 — Pid.Infrastructure -->
+      <rect x="120" y="152" width="840" height="72" fill="#f5f5f5"/>
+      <line x1="120" y1="224" x2="960" y2="224" stroke="rgba(45,49,66,0.12)" stroke-width="1"/>
+      <text x="140" y="192" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" letter-spacing="0.14em">L3</text>
+      <text x="200" y="184" fill="#2d3142" font-size="16" font-weight="600" font-family="'Geist', sans-serif">Pid.Infrastructure</text>
+      <text x="200" y="202" fill="#5a6580" font-size="10" font-family="'Geist', sans-serif">repozytorium in-memory, pętla symulacji</text>
+      <rect x="492" y="180" width="68" height="14" rx="2" fill="transparent" stroke="rgba(45,49,66,0.30)" stroke-width="0.8" stroke-dasharray="3,2"/>
+      <text x="526" y="190" fill="#5a6580" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">PLANOWANE</text>
+      <text x="940" y="192" fill="#4f5d75" font-size="10" font-family="'Geist Mono', monospace" text-anchor="end" letter-spacing="0.04em">SimulationRunner : BackgroundService</text>
+
+      <!-- L2 — Pid.Application -->
+      <rect x="120" y="224" width="840" height="72" fill="#ececec"/>
+      <line x1="120" y1="296" x2="960" y2="296" stroke="rgba(45,49,66,0.12)" stroke-width="1"/>
+      <text x="140" y="264" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" letter-spacing="0.14em">L2</text>
+      <text x="200" y="256" fill="#2d3142" font-size="16" font-weight="600" font-family="'Geist', sans-serif">Pid.Application</text>
+      <text x="200" y="274" fill="#5a6580" font-size="10" font-family="'Geist', sans-serif">CQRS: komendy, zapytania, DTO, walidatory</text>
+      <rect x="492" y="252" width="68" height="14" rx="2" fill="transparent" stroke="rgba(45,49,66,0.30)" stroke-width="0.8" stroke-dasharray="3,2"/>
+      <text x="526" y="262" fill="#5a6580" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">PLANOWANE</text>
+      <text x="940" y="264" fill="#4f5d75" font-size="10" font-family="'Geist Mono', monospace" text-anchor="end" letter-spacing="0.04em">ICommandHandler · ISimulationRepository</text>
+
+      <!-- L1 — Pid.Domain (FOCAL) -->
+      <rect x="120" y="296" width="840" height="72" fill="rgba(191,69,32,0.08)"/>
+      <rect x="120" y="296" width="840" height="72" fill="none" stroke="#bf4520" stroke-width="1"/>
+      <text x="140" y="336" fill="#bf4520" font-size="8" font-weight="600" font-family="'Geist Mono', monospace" letter-spacing="0.14em">L1</text>
+      <text x="200" y="328" fill="#2d3142" font-size="16" font-weight="600" font-family="'Geist', sans-serif">Pid.Domain</text>
+      <text x="200" y="346" fill="#5a6580" font-size="10" font-family="'Geist', sans-serif">model fizyczny i regulatory, zero zależności</text>
+      <rect x="492" y="324" width="68" height="14" rx="2" fill="transparent" stroke="#2d3142" stroke-width="0.8"/>
+      <text x="526" y="334" fill="#2d3142" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">ZBUDOWANE</text>
+      <text x="940" y="336" fill="#bf4520" font-size="10" font-family="'Geist Mono', monospace" text-anchor="end" letter-spacing="0.04em">Simulation · PidController · HouseModel</text>
+
+      <!-- Caption -->
+      <text x="120" y="420" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" letter-spacing="0.18em">FOCAL LAYER</text>
+      <text x="232" y="420" fill="#4f5d75" font-size="14" font-style="italic" font-family="'Instrument Serif', serif">Domain nie zna żadnej innej warstwy, więc regulator i model domu testujesz bez frameworka, bazy i zegara.</text>
+    </svg>
+    </div>
+  </div>
+</body>
+</html>
