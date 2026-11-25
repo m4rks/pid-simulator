@@ -11,7 +11,7 @@ public sealed class PidController(PidParameters parameters) : IController
     private double _integral;
     private double? _previousMeasuredC;
 
-    public PidParameters Parameters { get; } = parameters;
+    public PidParameters Parameters { get; private set; } = parameters;
 
     public double Compute(double setpointC, double measuredC, TimeSpan dt)
     {
@@ -36,6 +36,9 @@ public sealed class PidController(PidParameters parameters) : IController
 
         return Math.Clamp(proportional + _integral + derivative, MinOutput, MaxOutput);
     }
+
+    /// <summary>Retunes the controller without resetting its state, so the output does not jump.</summary>
+    public void UpdateParameters(PidParameters parameters) => Parameters = parameters;
 
     public void Reset()
     {

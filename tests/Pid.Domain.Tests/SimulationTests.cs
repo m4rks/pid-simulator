@@ -1,3 +1,4 @@
+using Pid.Domain.Common;
 using Pid.Domain.Controllers;
 using Pid.Domain.Heaters;
 using Pid.Domain.Plants;
@@ -67,6 +68,50 @@ public class SimulationTests
         Assert.Equal(TimeSpan.FromSeconds(20), sample.Time);
     }
 
+    [Fact]
+    public void Advance_runs_ticks_of_step_size_and_records_history()
+    {
+        var simulation = CreateSimulation(initialTemperatureC: 15, setpointC: 21, ambientC: 0);
+
+        simulation.Advance(TimeSpan.FromSeconds(25));
+
+        Assert.Equal(TimeSpan.FromSeconds(25), simulation.Time);
+        Assert.Equal(
+            [TimeSpan.FromSeconds(10), TimeSpan.FromSeconds(20), TimeSpan.FromSeconds(25)],
+            simulation.History.Select(s => s.Time));
+    }
+
+    [Fact]
+    public void History_keeps_only_the_newest_samples()
+    {
+        var simulation = CreateSimulation(initialTemperatureC: 15, setpointC: 21, ambientC: 0);
+
+        simulation.Advance(Simulation.StepSize * (Simulation.MaxHistorySamples + 5));
+
+        Assert.Equal(Simulation.MaxHistorySamples, simulation.History.Count);
+        Assert.Equal(simulation.Time, simulation.History.Last().Time);
+    }
+
+    [Fact]
+    public void Pid_parameters_can_be_updated()
+    {
+        var simulation = CreateSimulation(initialTemperatureC: 15, setpointC: 21, ambientC: 0);
+        var newParameters = new PidParameters(kp: 1, ki: 0.001, kd: 10);
+
+        simulation.UpdatePidParameters(newParameters);
+
+        Assert.Equal(newParameters, ((PidController)simulation.Controller).Parameters);
+    }
+
+    [Fact]
+    public void Rejects_empty_id()
+    {
+        var house = new HouseModel(new HouseParameters(2e7, 0.005), 15);
+        var pid = new PidController(new PidParameters(0.5, 0, 0));
+
+        Assert.Throws<DomainException>(() => new Simulation(Guid.Empty, house, pid, new Heater(10000), 21, 0));
+    }
+
     private static Simulation CreateSimulation(double initialTemperatureC, double setpointC, double ambientC)
     {
         var house = new HouseModel(new HouseParameters(heatCapacityJPerK: 2e7, thermalResistanceKPerW: 0.005), initialTemperatureC);
@@ -74,7 +119,7 @@ public class SimulationTests
         var pid = new PidController(new PidParameters(kp: 0.5, ki: 0.5 / 3600, kd: 0));
         var heater = new Heater(maxPowerW: 10000);
 
-        return new Simulation(house, pid, heater, setpointC, ambientC);
+        return new Simulation(Guid.NewGuid(), house, pid, heater, setpointC, ambientC);
     }
 
     private static List<SimulationSample> RunFor(Simulation simulation, TimeSpan duration)

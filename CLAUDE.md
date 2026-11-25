@@ -47,11 +47,16 @@ Zasady domeny:
 Własne proste interfejsy zamiast MediatR (lepiej do nauki i bez problemów licencyjnych):
 `ICommand`, `ICommandHandler<TCommand>`, `IQuery<TResult>`, `IQueryHandler<TQuery, TResult>`.
 
-- **Komendy** zmieniają stan i nie zwracają danych (najwyżej Id). Przykłady:
-  `CreateSimulation`, `SetSetpoint`, `SetAmbientTemperature`, `UpdatePidParameters`,
-  `ChangePlantModel`, `ChangeController`, `StartSimulation`, `PauseSimulation`, `ResetSimulation`.
+- **Komendy** zmieniają stan i nie zwracają danych; Id nowej symulacji nadaje wywołujący (`CreateSimulationCommand.SimulationId`).
+  Są: `CreateSimulation`, `SetSetpoint`, `SetAmbientTemperature`, `UpdatePidParameters`, `AdvanceSimulation`.
+  Planowane: `ChangePlantModel`, `ChangeController`, `StartSimulation`, `PauseSimulation`, `ResetSimulation`.
+- Upływ czasu symulacji to też komenda (`AdvanceSimulation`); runner w Infrastructure nie woła domeny bezpośrednio.
 - **Zapytania** tylko czytają i zwracają DTO, nigdy encje domenowe. Przykłady: `GetSimulationState`, `GetSimulationHistory`.
-- Każda komenda ma osobny walidator (FluentValidation) uruchamiany przed handlerem.
+- Każda komenda ma osobny walidator (FluentValidation). Uruchamia go dekorator `ValidatingCommandHandler`,
+  który `AddCommandHandler<TCommand, THandler>()` w `DependencyInjection.cs` owija wokół handlera.
+  Nowy handler trzeba tam zarejestrować.
+- Walidatory pilnują zakresów wejścia (`InputLimits`), a domena pilnuje niezmienników (np. dodatnia pojemność cieplna).
+- Brak symulacji: `NotFoundException`; błędne dane: `FluentValidation.ValidationException`.
 - Struktura folderów według funkcji: `Simulations/Commands/SetSetpoint/{SetSetpointCommand, Handler, Validator}.cs`.
 
 ## Infrastructure i Api
